@@ -1,0 +1,128 @@
+module SmartParking where
+
+data Brand = BMW | Nissan | Mercedez | Porche
+    deriving(Eq, Show)
+
+data Currency = EUR | USD | BTC
+    deriving(Eq, Show)
+
+data EstadoVaga = Reservado | Ocupado | Livre
+    deriving(Eq, Show)
+
+data TokenType
+
+-- Template para criar o registro do carro
+template Car
+    with
+        owner : Party
+        issuer: Party
+        plate : Text
+        brand : Brand
+        year : Date
+        id: Int
+    where
+        signatory owner
+
+ -- Template do IOT BOX       
+template IotBox
+    with
+        owner : Party
+        stall : Int
+        occupied : EstadoVaga
+        carPlate : Text
+        id : Int
+    where 
+        signatory owner
+        
+-- tempale da wallet
+template Assent
+    with
+        owner : Party
+        issuer : Party
+        currency : Currency
+        quantity : Decimal
+    where
+        signatory owner, issuer
+
+        ensure issuer /= owner
+
+-- template para registra o carro na blockchain
+template RegistCar
+    with
+        owner : Party
+        issuer : Party
+        carPlate: Text
+        brandCar : Brand
+        driver_name: Text
+        yearCar : Date
+    where 
+        signatory owner
+        
+        controller issuer can
+           ValidateCar: ContractId Car
+                with
+                    id: Int
+                do
+                    create Car
+                        with
+                            brand = brandCar
+                            plate= carPlate
+                            year = yearCar
+                            ..
+                        
+ -- template para mudar o estado da vaga de estacionamento com IOT BOX              
+template ParkingSpace
+    with
+        owner: Party
+        issuer: Party
+        stallSpace : Int
+        occupiedSpace : EstadoVaga
+        carPlateSpace : Text
+    where
+        signatory owner
+        
+        controller issuer can
+            ValidateSpaceCar: ContractId IotBox
+                with
+                    id : Int
+                do
+                    create IotBox
+                        with
+                            stall = stallSpace
+                            occupied = occupiedSpace
+                            carPlate = carPlateSpace
+                            ..
+template Tokens
+    with 
+        owner: Party
+        issuer: Party
+        nTokens: Int
+    where
+        signatory  owner
+    
+
+template BayTokens
+    with
+        owner:Party
+        issuer: Party
+        euros: Int
+    where
+        signatory owner
+
+        controller issuer can 
+            ConvetertMoneyToTOkens: ContractId Tokens
+                do
+                    create  Tokens
+                        with
+                            nTokens = euros * 5 --- 1€ equivale a 5 tokens
+                            .. 
+    
+
+        
+         
+                    
+--- Reserva so pode ser feito a partir de uma certa distancia e o espaço fica reservado so por X tempo
+---- O pagamento ser processado pelo fabricante e atribui os tokens
+--- o fabricante atribui um pre-registro do automovel na aplicação    
+
+                    
