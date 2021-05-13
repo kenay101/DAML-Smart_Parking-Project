@@ -91,6 +91,8 @@ template ParkingSpace
                             occupied = occupiedSpace
                             carPlate = carPlateSpace
                             ..
+                            
+-- template para criar os tokens que irão servir como forma de pagamento
 template Tokens
     with 
         owner: Party
@@ -99,7 +101,7 @@ template Tokens
     where
         signatory  owner
     
-
+-- tempalte para comprar os tokens
 template BayTokens
     with
         owner:Party
@@ -119,11 +121,9 @@ template BayTokens
 
         
          
-                    
---- Reserva so pode ser feito a partir de uma certa distancia e o espaço fica reservado so por X tempo
----- O pagamento ser processado pelo fabricante e atribui os tokens
---- o fabricante atribui um pre-registro do automovel na aplicação
+  -- to do              
 ---- Pagamento com tokens e com a wallet
----- certificar se o carro esta a uma distancia razoavel para realizar a reserva e certificar que ele chega em um determiando tempo   
+---- certificar se o carro esta a uma distancia razoavel para realizar a reserva e certificar que ele chega em um determiando tempo
+-- realizar o check-in e check-out
 
                     
