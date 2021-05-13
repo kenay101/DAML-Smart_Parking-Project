@@ -9,7 +9,6 @@ data Currency = EUR | USD | BTC
 data EstadoVaga = Reservado | Ocupado | Livre
     deriving(Eq, Show)
 
-data TokenType
 
 -- Template para criar o registro do carro
 template Car
@@ -98,23 +97,23 @@ template Tokens
         issuer: Party
         nTokens: Int
     where
-        signatory  issuer
+        signatory  owner
     
 
 template BayTokens
     with
         owner:Party
         issuer: Party
-        money: Int
+        euros: Int
     where
-        signatory owner,issuer
+        signatory owner
 
         controller issuer can 
-            RequestNewCard: ContractId Tokens
+            ConvetertMoneyToTOkens: ContractId Tokens
                 do
                     create  Tokens
                         with
-                            nTokens = money * 5 --- 1€ equivale a 5 tokens
+                            nTokens = euros * 5 --- 1€ equivale a 5 tokens
                             .. 
     
 
@@ -123,6 +122,8 @@ template BayTokens
                     
 --- Reserva so pode ser feito a partir de uma certa distancia e o espaço fica reservado so por X tempo
 ---- O pagamento ser processado pelo fabricante e atribui os tokens
---- o fabricante atribui um pre-registro do automovel na aplicação    
+--- o fabricante atribui um pre-registro do automovel na aplicação
+---- Pagamento com tokens e com a wallet
+---- certificar se o carro esta a uma distancia razoavel para realizar a reserva e certificar que ele chega em um determiando tempo   
 
                     
