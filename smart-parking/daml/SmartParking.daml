@@ -9,7 +9,8 @@ data Currency = EUR | USD | BTC
 data EstadoVaga = Reservado | Ocupado | Livre
     deriving(Eq, Show)
 
-
+data Stall = A | B | C
+    deriving(Eq, Show)
 -- Template para criar o registro do carro
 template Car
     with
@@ -26,7 +27,7 @@ template Car
 template IotBox
     with
         owner : Party
-        stall : Int
+        stall : Stall
         occupied : EstadoVaga
         carPlate : Text
         id : Int
@@ -55,7 +56,7 @@ template RegistCar
         driver_name: Text
         yearCar : Date
     where 
-        signatory owner
+        signatory owner, issuer
         
         controller issuer can
            ValidateCar: ContractId Car
@@ -74,7 +75,7 @@ template ParkingSpace
     with
         owner: Party
         issuer: Party
-        stallSpace : Int
+        stallSpace : Stall
         occupiedSpace : EstadoVaga
         carPlateSpace : Text
     where
@@ -91,8 +92,6 @@ template ParkingSpace
                             occupied = occupiedSpace
                             carPlate = carPlateSpace
                             ..
-                            
--- template para criar os tokens que irão servir como forma de pagamento
 template Tokens
     with 
         owner: Party
@@ -101,7 +100,7 @@ template Tokens
     where
         signatory  owner
     
--- tempalte para comprar os tokens
+
 template BayTokens
     with
         owner:Party
@@ -119,11 +118,66 @@ template BayTokens
                             .. 
     
 
+template ReservarEspaco
+    with 
+        owner: Party
+        iotbox: Party
+        carPlateSpace: Text
+        stall: Stall
+        reservar: EstadoVaga
+       
+    
+    where 
+        signatory owner
+    
+        controller iotbox can 
+            AcceptReservation: ContractId IotBox
+                 with
+                    id : Int
+                do
+                    create IotBox
+                        with
+                            stall = stall
+                            occupied = reservar
+                            carPlate = carPlateSpace
+                            ..
+            Decline: ContractId DeclineReservation
+                with
+                    reason: Text
+                    suggestStall: Stall
+                    
+                do
+                    create DeclineReservation
+                        with ..
+
+
+template DeclineReservation
+    with
+        owner: Party
+        carPlateSpace: Text
+        suggestStall: Stall
+        reservar: EstadoVaga
+        reason: Text
+        iotbox: Party
+    where
+        signatory owner,iotbox
+
         
-         
-  -- to do              
+        controller owner can
+            RequestNewStall: ContractId ReservarEspaco
+                do
+                    create ReservarEspaco
+                        with
+                            stall = suggestStall
+                            reservar = reservar
+                            carPlateSpace = carPlateSpace
+                            iotbox = iotbox
+                            ..              
+                    
+--- Reserva so pode ser feito a partir de uma certa distancia e o espaço fica reservado so por X tempo
+---- O pagamento ser processado pelo fabricante e atribui os tokens
+--- o fabricante atribui um pre-registro do automovel na aplicação
 ---- Pagamento com tokens e com a wallet
----- certificar se o carro esta a uma distancia razoavel para realizar a reserva e certificar que ele chega em um determiando tempo
--- realizar o check-in e check-out
+---- certificar se o carro esta a uma distancia razoavel para realizar a reserva e certificar que ele chega em um determiando tempo   
 
                     
