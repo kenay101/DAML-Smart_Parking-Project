@@ -24,7 +24,7 @@ template CarPropose
             do 
                 create car
                          
--- Template para criar o registro do carro
+-- Template para criar o registro do carro atraves de um invite do fabricante para o condutor
 template Car
     with
         owner : Party
@@ -74,12 +74,7 @@ template InvitePark
                             participantes=participante:: park.participantes
                             
                             
-                           
-     
-          
-
-
-                        
+                                   
  
 template Tokens
     with 
@@ -90,21 +85,7 @@ template Tokens
         signatory  owner
     
 
-template BayTokens
-    with
-        owner:Party
-        issuer: Party
-        euros: Int
-    where
-        signatory owner
 
-        controller issuer can 
-            ConvetertMoneyToTOkens: ContractId Tokens
-                do
-                    create  Tokens
-                        with
-                            nTokens = euros * 5 --- 1€ equivale a 5 tokens
-                            .. 
 
 
 template ParkinSpace
@@ -116,7 +97,7 @@ template ParkinSpace
         
     where signatory parkingSpaceOwner
     
-
+-- Template para criar o contrato de reserca de uma vaga
 template ReservarEspaco
     with 
         driver: Party
@@ -125,9 +106,6 @@ template ReservarEspaco
         stall: Stall
         reservar: EstadoVaga
         distance: Int
-        
-       
-    
     where 
         signatory driver
     
@@ -149,7 +127,7 @@ template ReservarEspaco
                     create DeclineReservation
                         with ..
 
-
+-- tempalte para que o dono do park recusar o pedido de reserva
 template DeclineReservation
     with
         driver: Party
@@ -197,15 +175,132 @@ template CancelReservation
                             estadoDaVaga = Cancelado
                             carPlate = carPlate
                             ..
-                    
-          
-    
+
+
+
+-- Wallet tracking tokens issued to a single owner. 
+-- An owner is authorized to tokens by virtue of having a (initially empty)
+-- `Wallet` contract.
+-- An owner can only see their own wallet. The issuer can see everybody's.
+template Wallet
+  with 
+    owner: Party
+    issuer: Party
+    tokens: Int
+    balance: Int
+    maxTokens: Int
+    maxBalance: Int
+   
+  where
+    ensure tokens >= 0 && tokens <= maxTokens
+    signatory issuer
+    observer owner
+
+  
+    controller issuer can 
+
+      
+      nonconsuming InviteParticipants: ContractId Wallet
+        with 
+          investor: Party
+          maxTokens': Int
+          maxBalance': Int
+        do create Wallet with 
+            owner = investor
+            issuer
+            tokens = 0
+            balance= 0
+            maxBalance= maxBalance'
+            maxTokens = maxTokens'
+
+      
+      TransferToken: (ContractId Wallet, ContractId Wallet)
+        with quantity: Int ; toWalletId: ContractId Wallet
+        do
+          remainder <- create this with tokens = tokens - (quantity*5)
+          toWallet <- fetch toWalletId
+          _ <- exercise toWalletId Archive
+          quotient <- create toWallet with tokens = toWallet.tokens + (quantity * 5)
+          return (remainder, quotient)
+
+      TransferMoney: (ContractId Wallet, ContractId Wallet)
+        with money: Int ; toWalletId: ContractId Wallet
+        do
+          remainder <- create this with balance = balance - money
+          toWallet <- fetch toWalletId
+          _ <- exercise toWalletId Archive
+          quotient <- create toWallet with balance = toWallet.balance + money
+          return (remainder, quotient)
+
+      nonconsuming AceptpurchaceToken: (ContractId Wallet, ContractId Wallet)
+        with requestId: ContractId TokenRequest
+        do 
+          request <- fetch requestId
+          exercise self TransferToken with 
+            quantity = request.euro
+            toWalletId = request.walletId
+
+      nonconsuming AceptpurchaceMoney: (ContractId Wallet, ContractId Wallet)
+        with requestId: ContractId MoneyRequest
+        do 
+          request <- fetch requestId
+          exercise self TransferMoney with 
+            money = request.money
+            toWalletId = request.walletId
+
+    -- The owner, being only an observer, needs to create `RequestTokens` rather than
+    -- updating the contract. In other words, they have a read-only view.
+    controller owner can
+
+      
+      nonconsuming BuyTokens: ContractId TokenRequest
+        with 
+          requestedQuantity_Euro: Int
+        do create TokenRequest with 
+            issuer = this.issuer
+            owner = this.owner
+            walletId = self
+            euro = requestedQuantity_Euro
+      nonconsuming BuyMoney: ContractId MoneyRequest
+        with 
+          requestedMoney: Int
+        do create MoneyRequest with 
+            issuer = this.issuer
+            owner = this.owner
+            walletId = self
+            money = requestedMoney
+
+-- Separate contract which allows an investor to initiate transfers.
+template TokenRequest
+  with
+    issuer: Party
+    owner: Party
+    walletId: ContractId Wallet
+    euro: Int
+  where
+    signatory owner,issuer
+
+template MoneyRequest
+  with
+    issuer: Party
+    owner: Party
+    walletId: ContractId Wallet
+    money: Int
+  where
+    signatory owner,issuer 
+
+  
+
+
+
+
+
                    
 --- Reserva so pode ser feito a partir de uma certa distancia
 ---- Depois de X tempo a reserva é cancelado
 ---- O pagamento ser processado pelo fabricante e atribui os tokens
 --- o fabricante atribui um pre-registro do automovel na aplicação
----- Pagamento com tokens e com a wallet
+---- Pagamento com tokens e com a wallet 
 ---- certificar se o carro esta a uma distancia razoavel para realizar a reserva e certificar que ele chega em um determiando tempo   
 
                 
