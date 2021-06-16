@@ -6,9 +6,12 @@ name: smart-parking
 source: daml
 init-script: Main:setup
 parties:
-  - Driver
-  - Parking Space owner
-  - Fabricante
+  - Kenny
+  - Francisco
+  - EMEL
+  - Empark
+  - BMW
+  - Mercedez
 version: 0.0.1
 dependencies:
   - daml-prim

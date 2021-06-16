@@ -73,31 +73,20 @@ template InvitePark
                         with 
                             participantes=participante:: park.participantes
                             
-                            
-                                   
- 
-template Tokens
-    with 
-        owner: Party
-        issuer: Party
-        nTokens: Int
-    where
-        signatory  owner
-    
-
-
-
+                                
 
 template ParkinSpace
     with
         parkingSpaceOwner:Party
+        driver: Party
         carPlate: Text
         stall: Stall
         estadoDaVaga:EstadoVaga
         
-    where signatory parkingSpaceOwner
-    
--- Template para criar o contrato de reserca de uma vaga
+    where 
+    signatory parkingSpaceOwner
+    observer driver
+-- Template para criar o contrato de resercva de uma vaga
 template ReservarEspaco
     with 
         driver: Party
@@ -108,17 +97,19 @@ template ReservarEspaco
         distance: Int
     where 
         signatory driver
+        observer parkingSpaceOwner
     
         controller parkingSpaceOwner can 
-            AcceptReservation: ContractId ParkinSpace
+          nonconsuming AcceptReservation: ContractId ParkinSpace
                 do
                     create ParkinSpace
                         with
                             stall = stall
                             estadoDaVaga = reservar
                             carPlate = carPlateSpace
+                           
                             ..
-            Decline: ContractId DeclineReservation
+          nonconsuming Decline: ContractId DeclineReservation
                 with
                     reason: Text
                     suggestDistance: Int
@@ -127,7 +118,18 @@ template ReservarEspaco
                     create DeclineReservation
                         with ..
 
+          nonconsuming Cancelar: (ContractId ReservarEspaco, ContractId ReservarEspaco)
+                with estado: EstadoVaga ; toSpaceId: ContractId ReservarEspaco
+                do
+                remainder <- create this with reservar = estado
+                toSpace <- fetch toSpaceId
+                _ <- exercise toSpaceId Archive
+                quotient <- create toSpace with reservar = toSpace.reservar
+                return (remainder, quotient)
+            
+
 -- tempalte para que o dono do park recusar o pedido de reserva
+
 template DeclineReservation
     with
         driver: Party
@@ -139,11 +141,12 @@ template DeclineReservation
         stall: Stall
         
     where
-        signatory driver,parkingSpaceOwner
+        signatory parkingSpaceOwner
+        observer driver
 
         
-        controller parkingSpaceOwner can
-            RequestNewStall: ContractId ReservarEspaco
+        controller driver can
+         nonconsuming RequestNewStall: ContractId ReservarEspaco
                 with
                     distance: Int
                 do
@@ -153,31 +156,14 @@ template DeclineReservation
                             stall = stall
                             reservar = reservar
                             carPlateSpace = carPlateSpace
-                            distance=suggestDistance
+                            distance=distance
                             ..              
 
-template CancelReservation
-    with
-        parkingSpaceOwner:Party
-        driver: Party
-        carPlate: Text
-    where
-        signatory parkingSpaceOwner,driver
-    
-        controller parkingSpaceOwner can
-            Cancel: ContractId ParkinSpace
-                with
-                    reason: Text
-                do
-                    create ParkinSpace
-                        with
-                            stall = A
-                            estadoDaVaga = Cancelado
-                            carPlate = carPlate
-                            ..
+
+            
 
 
-
+--
 -- Wallet tracking tokens issued to a single owner. 
 -- An owner is authorized to tokens by virtue of having a (initially empty)
 -- `Wallet` contract.
